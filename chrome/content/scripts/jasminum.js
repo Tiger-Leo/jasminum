@@ -260,7 +260,7 @@ Zotero.Jasminum = new function () {
             item.setNote(noteHTML);
             await item.saveTx();
             await this.Scrape.addBookmark(item, bookmark);
-        }
+        }  // Add pdf-lib program here.
     };
 
 

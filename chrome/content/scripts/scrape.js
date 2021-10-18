@@ -455,6 +455,150 @@ Zotero.Jasminum.Scrape = new function () {
     // For Adding bookmark
     //########################
 
+
+    this.addOutlineItem = function (level, title, page, outlines) {
+        outlines[level] += 1;
+        let id = `${level}_${outlines[level]}`;
+        let item = {
+            level: level,
+            title: title,
+            page: page,
+            idx: outlines[level],
+            prev: outlines[level] === 1 ? null : `${level}_${outlines[level] - 1}`,
+            next: null,  // Need to fill after traverse all outlines
+            subitem: 0,  // Count of descendants
+            parent: level != 1 ? `${level - 1}_${outlines[level - 1]}` : null,  // Parent item index in parent level
+            first: null,  // Minimum page number of descendants
+            last: null,  // Maximum page number of descendants
+        };
+
+        outlines.depth = outlines.depth < level ? level : outlines.depth;
+        outlines[id] = item;
+        return outlines;
+    }.bind(Zotero.Jasminum);
+
+
+    this.addFirstLast = function (outlines) {
+        for (var level = outlines.depth; level > 0; level--) {
+            for (var idx = 1; idx <= outlines[level]; idx++) {
+                console.log(level, idx)
+                var item = outlines[`${level}_${idx}`];
+                if (idx != outlines[level] && item.parent === outlines[`${level}_${idx + 1}`].parent) item.next = `${level}_${idx + 1}`;
+
+                // Prev and Next should in the same parent item.
+                if (item.prev && item.parent != outlines[item.prev].parent) item.prev = null;
+
+                if (!item.parent) continue;
+
+                var parentItem = outlines[item.parent];
+                if (!parentItem.first
+                    || (
+                        outlines[parentItem.first].page > item.page
+                        && (outlines[parentItem.first].level + outlines[parentItem.first].idx) > (level + idx)
+                    )) {
+                    parentItem.first = `${level}_${idx}`;
+                }
+                if (!parentItem.last
+                    || (
+                        outlines[parentItem.last].page < item.page
+                        && (outlines[parentItem.last].level + outlines[parentItem.last].idx) < (level + idx)
+                    )) {
+                    parentItem.last = `${level}_${idx}`;
+                }
+
+                let subitemCount = item.subitem === 0 ? 1 : item.subitem;
+                parentItem.subitem += subitemCount;
+            }
+        }
+        return outlines;
+    }.bind(Zotero.Jasminum);
+
+    this.createOutlineItem = function (pdfDoc, title, parent, prev, next, first, last, count, page) {
+        Zotero.debug("createOutlineItem");
+        let array = PDFLib.PDFArray.withContext(pdfDoc.context);
+        array.push(page);
+        array.push(PDFLib.PDFName.of("XYZ"));
+        array.push(PDFLib.PDFNull);
+        array.push(PDFLib.PDFNull);
+        array.push(PDFLib.PDFNull);
+        const map = new Map();
+        map.set(PDFLib.PDFName.Title, PDFLib.PDFHexString.fromText(title));
+        map.set(PDFLib.PDFName.Parent, parent);
+        if (first != null) {
+            map.set(PDFLib.PDFName.of("First"), first);
+        }
+        if (last != null) {
+            map.set(PDFLib.PDFName.of("Last"), last);
+        }
+        if (prev != null) {
+            map.set(PDFLib.PDFName.of("Prev"), prev);
+        }
+        if (next != null) {
+            map.set(PDFLib.PDFName.of("Next"), next);
+        }
+        if (count != null) {
+            map.set(PDFLib.PDFName.of("Count"), PDFLib.PDFNumber.of(count));
+        }
+        map.set(PDFLib.PDFName.of("Dest"), array);
+
+        return PDFLib.PDFDict.fromMapWithContext(map, pdfDoc.context);
+    }.bind(Zotero.Jasminum);
+
+    this.addOutline = async function (filename, outlines) {
+        let array = await OS.File.read(filename);
+        let int8Array = new Uint8Array(array);
+        var doc = await PDFLib.PDFDocument.load(int8Array);
+
+        var pageRefs = [];
+        doc.catalog.Pages().traverse((kid, ref) => {
+            if (kid instanceof PDFLib.PDFPageLeaf) pageRefs.push(ref);
+        });
+
+        // Create Dict ref at 0
+        var itemRefById = { 'root': doc.context.nextRef() };
+        for (let id in outlines) {
+            if (!id.includes("_")) continue;
+            itemRefById[id] = doc.context.nextRef();
+        }
+
+        var outlinesDictMap = new Map();
+        outlinesDictMap.set(PDFLib.PDFName.Type, PDFLib.PDFName.of("Outlines"));
+        outlinesDictMap.set(PDFLib.PDFName.of("First"), itemRefById['1_1']);
+        outlinesDictMap.set(PDFLib.PDFName.of("Last"), itemRefById[`1_${outlines[1]}`]);
+        //This is a count of the number of outline items. Should be changed for X no. of outlines
+        outlinesDictMap.set(PDFLib.PDFName.of("Count"), PDFLib.PDFNumber.of(outlines.total));
+        var outlinesDict = PDFLib.PDFDict.fromMapWithContext(outlinesDictMap, doc.context);
+        //Pointing the "Outlines" property of the PDF's "Catalog" to the first object of your outlines
+        doc.catalog.set(PDFLib.PDFName.of("Outlines"), itemRefById.root);
+        //First 'Outline' object. Refer to table H.3 in Annex H.6 of PDF Specification doc.
+        doc.context.assign(itemRefById.root, outlinesDict);
+
+        for (let id in outlines) {
+            if (!id.includes("_")) continue;
+            let item = outlines[id];
+            Zotero.debug(id);
+
+            var outlineItem = this.Scrape.createOutlineItem(
+                doc,
+                item.title,
+                item.parent ? itemRefById[item.parent] : itemRefById.root,
+                item.prev ? itemRefById[item.prev] : null,
+                item.next ? itemRefById[item.next] : null,
+                item.first ? itemRefById[item.first] : null,
+                item.last ? itemRefById[item.last] : null,
+                item.subitem > 0 ? item.subitem : null,
+                pageRefs[item.page - 1]
+            );
+            doc.context.assign(itemRefById[id], outlineItem);
+        }
+        Zotero.debug("All item compelte");
+        let file = await doc.save();
+        Zotero.debug("1");
+        await OS.File.writeAtomic("/home/l0o0/workspace/PDFoutline/c.pdf", file, {
+            tmpPath: "/home/l0o0/workspace/PDFoutline/c.pdf" + ".tmp",
+        });
+    }.bind(Zotero.Jasminum);
+
     this.getReaderUrl = function (itemUrl) {
         Zotero.debug("** Jasminum get Reader url.");
         var itemid = this.Scrape.getIDFromUrl(itemUrl);
@@ -487,8 +631,18 @@ Zotero.Jasminum.Scrape = new function () {
         );
         var tree = chapterHTML.getElementById("treeDiv");
         var rows = tree.querySelectorAll("tr");
-        var rows_array = [];
+        var rows_array = [];  // Bookmark data for pdftk
         var note = "";
+        var outlines = {  // Bookmark for pdf-lib
+            depth: 0,
+            1: 0,
+            2: 0,
+            3: 0,
+            4: 0,
+            5: 0,
+            6: 0
+        };
+
         for (let row of rows) {
             Zotero.debug(row.textContent.trim());
             var cols = row.querySelectorAll("td");
@@ -501,6 +655,7 @@ Zotero.Jasminum.Scrape = new function () {
             var page = pageRex[1];
             var bookmark = `BookmarkBegin\nBookmarkTitle: ${title}\nBookmarkLevel: ${level}\nBookmarkPageNumber: ${page}`;
             rows_array.push(bookmark);
+            outlines = this.Scrape.addOutlineItem(level, title, page, outlines);
             note += `<li style="padding-top: ${level == 1 ? 4 : 8
                 }px; padding-left: ${12 * (level - 1)
                 }px"><a href="zotero://open-pdf/${lib}_${key}/${page}">${title}</a></li>\n`;
@@ -510,6 +665,8 @@ Zotero.Jasminum.Scrape = new function () {
             '<ul id="toc" style="list-style-type: none; padding-left: 0px">\n' +
             note +
             "</ul>";
+        outlines = this.Scrape.addFirstLast(outlines);
+        // Return outlines or bookmark array according to bookmark adding-program in preference.
         return [rows_array.join("\n"), note];
     }.bind(Zotero.Jasminum);
 

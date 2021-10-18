@@ -3,6 +3,8 @@ if (!Zotero.Jasminum) {
         .getService(Components.interfaces.mozIJSSubScriptLoader);
     var scripts = ['jasminum', 'ui', 'scrape', 'utils'];
     scripts.forEach(s => fileLoader.loadSubScript('chrome://jasminum/content/scripts/' + s + '.js', {}, "UTF-8"));
+    // Load PDFLib 
+    fileLoader.loadSubScript('chrome://jasminum/content/scripts/pdf-lib.min.js')
 }
 
 
