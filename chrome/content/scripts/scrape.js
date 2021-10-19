@@ -576,8 +576,6 @@ Zotero.Jasminum.Scrape = new function () {
         for (let id in outlines) {
             if (!id.includes("_")) continue;
             let item = outlines[id];
-            Zotero.debug(id);
-
             var outlineItem = this.Scrape.createOutlineItem(
                 doc,
                 item.title,
@@ -591,12 +589,12 @@ Zotero.Jasminum.Scrape = new function () {
             );
             doc.context.assign(itemRefById[id], outlineItem);
         }
-        Zotero.debug("All item compelte");
+
         let file = await doc.save();
-        Zotero.debug("1");
         await OS.File.writeAtomic("/home/l0o0/workspace/PDFoutline/c.pdf", file, {
             tmpPath: "/home/l0o0/workspace/PDFoutline/c.pdf" + ".tmp",
         });
+        Zotero.debug("** Jasminum PDFLib bookmark compelte");
     }.bind(Zotero.Jasminum);
 
     this.getReaderUrl = function (itemUrl) {
@@ -667,7 +665,11 @@ Zotero.Jasminum.Scrape = new function () {
             "</ul>";
         outlines = this.Scrape.addFirstLast(outlines);
         // Return outlines or bookmark array according to bookmark adding-program in preference.
-        return [rows_array.join("\n"), note];
+        if (Zotero.Prefs.get("jasminum.use-pdflib")) {
+            return [outlines, note];
+        } else {
+            return [rows_array.join("\n"), note];
+        }
     }.bind(Zotero.Jasminum);
 
     // Find chapter page number from CNKI reader side bar.

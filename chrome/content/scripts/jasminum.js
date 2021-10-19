@@ -59,6 +59,9 @@ Zotero.Jasminum = new function () {
         if (Zotero.Prefs.get("jasminum.autobookmark") === undefined) {
             Zotero.Prefs.set("jasminum.autobookmark", true);
         }
+        if (Zotero.Prefs.get("jasminum.use-pdflib") === undefined) {
+            Zotero.Prefs.set("jasminum.use-pdflib", true);
+        }
     };
 
     this.notifierCallback = {
@@ -226,7 +229,8 @@ Zotero.Jasminum = new function () {
 
     this.addBookmarkItem = async function () {
         var item = ZoteroPane.getSelectedItems()[0];
-        if (!(await this.Scrape.checkPath())) {
+        // 使用PDFtk 且 安装目录未设置
+        if (!Zotero.Prefs.get("use-pdflib") && !(await this.Scrape.checkPath())) {
             this.Utils.showPopup(
                 "PDFtk Server is not installed",
                 "未找到 PDFtk Server 的可执行文件。参考插件设置首选项中的下载地址下载并安装，在首选项中设置对应的可执行文件路径(路径以bin结尾)",
@@ -253,14 +257,17 @@ Zotero.Jasminum = new function () {
                 true
             )
             return;
+        }
+
+        var noteHTML = item.getNote();
+        noteHTML += note;
+        item.setNote(noteHTML);
+        await item.saveTx();
+        if (Zotero.Prefs.get("jasminum.use-pdflib")) {
+            await this.Scrape.addOutline(item.getFilePath(), bookmark)
         } else {
-            // Add TOC note
-            var noteHTML = item.getNote();
-            noteHTML += note;
-            item.setNote(noteHTML);
-            await item.saveTx();
             await this.Scrape.addBookmark(item, bookmark);
-        }  // Add pdf-lib program here.
+        }
     };
 
 
