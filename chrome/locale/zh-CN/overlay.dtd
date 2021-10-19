@@ -12,9 +12,13 @@
 <!ENTITY jasminum.check "检查">
 <!ENTITY jasminum.chinese.caption "知网参数设置">
 <!ENTITY jasminum.pdftk.caption "PDFtk Server 路径设置">
-<!ENTITY jasminum.choose "选择">
+<!ENTITY jasminum.choose.label "选择">
 <!ENTITY jasminum "茉莉花">
-<!ENTITY jasminum.pdftk.info "添加书签功能依赖于PDFtk server，正确安装并设置好安装目录才能实现书签添加功能，请选择PDFtk可执行文件所在目录">
+<!ENTITY jasminum.bookmark.caption "书签添加设置">
+<!ENTITY jasminum.use-pdflib-label "使用pdf-lib">
+<!ENTITY jasminum-bookmark-annotations-label "默认使用pdf-lib添加书签，不需要额外安装软件">
+<!ENTITY jasminum-use-pdftk-label "使用PDFtk server">
+<!ENTITY jasminum.pdftk.info "使用PDFtk server添加书签时，请先正确安装并设置好安装目录才能实现书签添加功能，安装目录以 bin 结尾">
 <!ENTITY pdftk.path.check.ok "PDFtk Server安装目录检查通过">
 <!ENTITY pdftk.path.check.error "未在该目录下发现pdftk执行程序">
 <!ENTITY jasminum.namepatent.desc "根据文件名抓取知网元数据，文件名格式设置:{&#37;t}=标题，{&#37;g}=作者，{&#37;y}=年份，{&#37;j}=其他（例如来源信息）；分隔符依实情指定，可连续使用多个；不用考虑文件后缀名">
@@ -23,6 +27,7 @@
 <!ENTITY jasminum.autobookmark.label "从知网添加学位论文时自动添加书签">
 <!ENTITY jasminum.zhnamedot.label "当拉取知网元数据时去除 Zotfile 重命名文件名中的逗号(, )">
 <!ENTITY jasminum.namehandler.removeDot.label "去除文件名中逗号">
+<!ENTITY jasminum.translator.refresh.label "请先点击下方的刷新按钮，查看本地与最新的翻译器信息">
 <!ENTITY jasminum.refresh.label "刷新">
 <!ENTITY jasminum.updateall.label "更新全部">
 <!ENTITY jasminum.updateT.label "更新">

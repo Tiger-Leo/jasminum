@@ -8,12 +8,13 @@
     <prefwindow id="zotero-prefs">
         <prefpane id="zotero-prefpane-jasminum" insertafter="zotero-prefpane-advanced" label="&jasminum;" image="chrome://jasminum/skin/icon.png" onpaneload="initPref();">
             <preferences id="zotero-preferences-jasminum">
-                <preference id="pref-jasminum-pdftkpath" name="extensions.zotero.jasminum.pdftkpath" type="string"/>
-                <preference id="pref-jasminum-autoupdate" name="extensions.zotero.jasminum.autoupdate" type="bool"/>
-                <preference id="pref-jasminum-namepatent" name="extensions.zotero.jasminum.namepatent" type="string"/>
+                <preference id="pref-jasminum.pdftkpath" name="extensions.zotero.jasminum.pdftkpath" type="string"/>
+                <preference id="pref-jasminum.autoupdate" name="extensions.zotero.jasminum.autoupdate" type="bool"/>
+                <preference id="pref-jasminum.namepatent" name="extensions.zotero.jasminum.namepatent" type="string"/>
                 <preference id="pref-jasminum.zhnamesplit" name="extensions.zotero.jasminum.zhnamesplit" type="bool"/>
                 <preference id="pref-jasminum.rename" name="extensions.zotero.jasminum.rename" type="bool"/>
                 <preference id="pref-jasminum.autobookmark" name="extensions.zotero.jasminum.autobookmark" type="bool"/>
+                <preference id="pref-jasminum.use-pdflib" name="extensions.zotero.jasminum.use-pdflib" type="bool"/>
                 <preference id="pref-jasminum.zhnamedot" name="extensions.zotero.jasminum.zhnamedot" type="bool"/>
             </preferences>
             <tabbox>
@@ -28,7 +29,7 @@
                         <vbox flex="1">
                             <groupbox>
                                 <caption label="&jasminum.chinese.caption;"/>
-                                <checkbox id="jasminum-autoupdate" label="&jasminum.autoupdate.label;" preference="pref-jasminum-autoupdate"/>
+                                <checkbox id="jasminum.autoupdate" label="&jasminum.autoupdate.label;" preference="pref-jasminum.autoupdate"/>
                                 <checkbox id="jasminum.zhnamesplit" label="&jasminum.zhnamesplit.label;" preference="pref-jasminum.zhnamesplit"/>
                                 <checkbox id="jasminum.rename" label="&jasminum.rename.label;" preference="pref-jasminum.rename"/>
                                 <checkbox id="jasminum.autobookmark" label="&jasminum.autobookmark.label;" preference="pref-jasminum.autobookmark"/>
@@ -36,22 +37,34 @@
                                 <separator/>
                                 <vbox flex="1">
                                     <description>&jasminum.namepatent.desc;</description>
-                                    <textbox id="jasminum-namepatent" preference="pref-jasminum-namepatent"/>
+                                    <textbox id="jasminum.namepatent" preference="pref-jasminum.namepatent"/>
                                 </vbox>
                             </groupbox>
                             <groupbox>
-                                <caption label="&jasminum.pdftk.caption;"/>
-                                <description>&jasminum.pdftk.info; <label class="zotero-text-link" value="PDFtk Server" href="https://www.pdflabs.com/tools/pdftk-server/"/></description>
-                                <hbox style="margin: 0" align="center">
-                                    <textbox id="jasminum-pdftk-path" preference="pref-jasminum-pdftkpath" readonly="true" flex="1"/>
-                                    <button label="&jasminum.choose;" oncommand="choosePath();"/>
+                                <caption label="&jasminum.bookmark.caption;"/>
+                                <radiogroup id="jasminum-" preference="pref-jasminum.use-pdflib">
+								<hbox style="margin: 0" align="center">
+									<radio id="jasminum-use-pdflib-true" label="&jasminum.use-pdflib-label;" value="true"/>
+									<image src="chrome://jasminum/skin/information.png" tooltiptext="&jasminum-bookmark-annotations-label;"/>
+								</hbox>
+								<hbox style="margin: 0" align="center">
+									<radio id="jasminum-use-pdflib-false" label="&jasminum-use-pdftk-label;" value="false"/>
+									<textbox id="jasminum.pdftk-path" preference="pref-jasminum.pdftkpath" readonly="true" flex="1"/>
+                                    <button label="&jasminum.choose.label;" oncommand="choosePath();"/>
                                     <image id="path-accept" src="chrome://jasminum/skin/accept.png" tooltiptext="&pdftk.path.check.ok;" hidden="true"/>
                                     <image id="path-error" src="chrome://jasminum/skin/exclamation.png" tooltiptext="&pdftk.path.check.error;" hidden="true"/>
+								</hbox>
+							</radiogroup>
+                                <description>&jasminum.pdftk.info; <label class="zotero-text-link" value="PDFtk Server" href="https://www.pdflabs.com/tools/pdftk-server/"/></description>
+                                <hbox style="margin: 0" align="center">
+                                    
+                                    
                                 </hbox>
                             </groupbox>
                         </vbox>
                     </tabpanel>
                     <tabpanel id="zotero-prefpane-translators-tab" orient="vertical">
+                        <description>&jasminum.translator.refresh.label;</description>
                         <listbox id="translators-listbox" flex="1">
 		                <listhead>
 		                	<listheader label="Translators"/>
@@ -87,6 +100,7 @@
                         <hbox>
                             <label value="Translators_CN 项目地址"/><label class="zotero-text-link" value="https://github.com/l0o0/translators_CN" href="https://github.com/l0o0/translators_CN"/>
                         </hbox>
+                        <button label="Open" oncommand="window.openDialog('chrome://jasminum/content/updateMetadata.xul', '_blank', 'chrome,modal,centerscreen,resizable=no');"/>
                     </tabpanel>
                 </tabpanels>
             </tabbox>
